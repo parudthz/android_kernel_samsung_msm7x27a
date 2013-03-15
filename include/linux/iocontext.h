@@ -35,7 +35,7 @@ enum {
 	IOC_CFQ_IOPRIO_CHANGED,
 	IOC_BFQ_IOPRIO_CHANGED,
 	IOC_IOPRIO_CHANGED_BITS
-);
+};
 
 /*
  * I/O subsystem state of the associated processes.  It is refcounted
