@@ -78,7 +78,7 @@ void exit_io_context(struct task_struct *task)
 	if (atomic_dec_and_test(&ioc->nr_tasks)) {
 		hlist_sched_exit(ioc, &ioc->cic_list);
 		hlist_sched_exit(ioc, &ioc->bfq_cic_list);
-	}
+
 	put_io_context(ioc);
 }
 
