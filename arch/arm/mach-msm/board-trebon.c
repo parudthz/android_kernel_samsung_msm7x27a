@@ -20,13 +20,13 @@
 #include <mach/msm_hsusb.h>
 #include <mach/rpc_hsusb.h>
 #include <mach/rpc_pmapp.h>
-#include <mach/usbdiag.h>
-#include <mach/usb_gadget_fserial.h>
 #include <mach/msm_memtypes.h>
 #include <mach/msm_serial_hs.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
 #include <linux/slab.h>
+#include <linux/usb/android.h>
+#include <mach/usbdiag.h>
 //#include <mach/gpio-v1.h>
 #ifdef CONFIG_MACH_JENA
 #include <mach/gpio_jena.h>
@@ -63,11 +63,6 @@
 #endif
 #include <mach/rpc_server_handset.h>
 #include <mach/socinfo.h>
-
-#ifdef CONFIG_USB_G_ANDROID
-#include <linux/usb/android.h>
-#include <mach/usbdiag.h>
-#endif
 
 #include <linux/fsaxxxx_usbsw.h>
 #ifdef CONFIG_PROXIMITY_SENSOR
@@ -1778,7 +1773,6 @@ static struct msm_i2c_platform_data msm_gsbi1_qup_i2c_pdata = {
 #endif /* defined(_CONFIG_MACH_JENA) || ... */
 #endif /* CONFIG_ARCH_MSM7X27A */
 
-#ifdef CONFIG_USB_G_ANDROID
 static struct android_usb_platform_data android_usb_pdata = {
         .update_pid_and_serial_num = usb_diag_update_pid_and_serial_num,
 };
@@ -1790,7 +1784,6 @@ static struct platform_device android_usb_device = {
                 .platform_data = &android_usb_pdata,
         },
 };
-#endif
 
 static int __init boot_mode_boot(char *onoff)
 {
@@ -3792,9 +3785,7 @@ static struct platform_device *surf_ffa_devices[] __initdata = {
 	&msm_gsbi1_qup_i2c_device,
 	&msm_device_otg,
 	&msm_device_gadget_peripheral,
-	#ifdef CONFIG_USB_G_ANDROID
     &android_usb_device,
-	#endif
 	&android_pmem_device,
 	&android_pmem_adsp_device,
 	&android_pmem_audio_device,
