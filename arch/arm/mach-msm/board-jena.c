@@ -20,11 +20,11 @@
 #include <mach/msm_hsusb.h>
 #include <mach/rpc_hsusb.h>
 #include <mach/rpc_pmapp.h>
-#include <mach/usbdiag.h>
-#include <mach/usb_gadget_fserial.h>
 #include <mach/msm_memtypes.h>
 #include <mach/msm_serial_hs.h>
-#include <linux/usb/android_composite.h>
+#include <linux/slab.h>
+#include <linux/usb/android.h>
+#include <mach/usbdiag.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
 //#include <mach/gpio-v1.h>
@@ -1741,8 +1741,8 @@ static struct msm_i2c_platform_data msm_gsbi1_qup_i2c_pdata = {
 #ifdef CONFIG_ARCH_MSM7X27A
 #if defined(_CONFIG_MACH_JENA) || defined(_CONFIG_MACH_TREBON)
 
-#define MSM_PMEM_MDP_SIZE       0x1DD1000
-#define MSM_PMEM_ADSP_SIZE      0x1000000
+#define MSM_PMEM_MDP_SIZE       0x1400000 // 20MB // stock: 0x1DD1000 (29MB)
+#define MSM_PMEM_ADSP_SIZE      0xC00000 // 12MB // stock: 0x1000000 (16MB)
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
 /* prim = 320 x 480 x 4(bpp) x 3(pages) */
 #define MSM_FB_SIZE             320 * 480 * 4 * 3
@@ -1760,146 +1760,16 @@ static struct msm_i2c_platform_data msm_gsbi1_qup_i2c_pdata = {
 #endif /* defined(_CONFIG_MACH_JENA) || ... */
 #endif /* CONFIG_ARCH_MSM7X27A */
 
-static char *usb_functions_default[] = {
-#ifdef CONFIG_USB_ANDROID_ACM
-	"acm",
-#endif
-#ifdef CONFIG_USB_F_SERIAL
-	"modem",
-#endif
-	"diag",
-	"usb_mass_storage",
-};
-
-static char *usb_functions_ums[] = {
-
-	"usb_mass_storage",
-};
-
-static char *usb_functions_default_adb[] = {
-#ifdef CONFIG_USB_ANDROID_ACM
-	"acm",
-#endif
-#ifdef CONFIG_USB_F_SERIAL
-	"modem",
-#endif
-	"diag",
-	"usb_mass_storage",
-	"adb",
-};
-
-static char *usb_functions_rndis[] = {
-	"rndis",
-};
-
-static char *usb_functions_rndis_adb[] = {
-	"rndis",
-	"adb",
-};
-
-static char *usb_functions_all[] = {
-#ifdef CONFIG_USB_ANDROID_ACM
-	"acm",
-#endif
-#ifdef CONFIG_USB_F_SERIAL
-	"modem",
-#endif
-#ifdef CONFIG_USB_ANDROID_DIAG
-	"diag",
-#endif
-	"usb_mass_storage",
-	"adb",
-#ifdef CONFIG_USB_ANDROID_RMNET
-	"rmnet",
-#endif
-#ifdef CONFIG_USB_ANDROID_RNDIS
-	"rndis",
-#endif
-
-};
-
-static struct android_usb_product usb_products[] = {
-	{
-		.product_id     = 0x681d,
-		.num_functions	= ARRAY_SIZE(usb_functions_ums),
-		.functions      = usb_functions_ums,
-	},
-	{
-		.product_id     = 0x689e,			
-		.num_functions	= ARRAY_SIZE(usb_functions_default),
-		.functions      = usb_functions_default,
-	},
-	{
-		.product_id	= 0x689e,
-		.num_functions	= ARRAY_SIZE(usb_functions_default_adb),
-		.functions	= usb_functions_default_adb,
-	},
-	{
-		.product_id	= 0x6881,
-		.num_functions	= ARRAY_SIZE(usb_functions_rndis),
-		.functions	= usb_functions_rndis,
-	},
-};
-
-static struct usb_mass_storage_platform_data mass_storage_pdata = {
-#if (CONFIG_MACH_TREBON_HWREV == 0x1)
-	.nluns		= 1,
-#else
-	.nluns		= 2,
-#endif
-	.vendor		= "SAMSUNG ",
-#if defined(CONFIG_MACH_JENA_NON_NFC)
-	.product        = "GT-S6500D",
-#elif defined(CONFIG_MACH_JENA_TELSTRA) || defined(CONFIG_MACH_JENA_AUSVHA)
-	.product        = "GT-S6500T",
-#else
-	.product        = "GT-S6500",
-#endif
-	.release	= 0x0100,
-};
-
-static struct platform_device usb_mass_storage_device = {
-	.name	= "usb_mass_storage",
-	.id	= -1,
-	.dev	= {
-		.platform_data = &mass_storage_pdata,
-	},
-};
-
-static struct usb_ether_platform_data rndis_pdata = {
-	/* ethaddr is filled by board_serialno_setup */
-	.vendorID	= 0x04e8,
-	.vendorDescr	= "Qualcomm Incorporated",
-};
-
-static struct platform_device rndis_device = {
-	.name	= "rndis",
-	.id	= -1,
-	.dev	= {
-		.platform_data = &rndis_pdata,
-	},
-};
-
 static struct android_usb_platform_data android_usb_pdata = {
-	.vendor_id	= 0x04e8,
-/*	.product_id = 0x681d,*/
-	.product_id = 0x689e,
-	.version	= 0x0100,
-	.product_name	= "Samsung Android USB Device",
-	.manufacturer_name = "SAMSUNG Electronics Co., Ltd.",
-	.num_products = ARRAY_SIZE(usb_products),
-	.products = usb_products,
-	.num_functions = ARRAY_SIZE(usb_functions_all),
-	.functions = usb_functions_all,
-	.serial_number = "1234567890ABCDEF",
+        .update_pid_and_serial_num = usb_diag_update_pid_and_serial_num,
 };
 
 static struct platform_device android_usb_device = {
-	.name	= "android_usb",
-	.id	= -1,
-	.dev	= {
-		.platform_data = &android_usb_pdata,
-	},
+        .name       = "android_usb",
+        .id         = -1,
+        .dev        = {
+                .platform_data = &android_usb_pdata,
+        },
 };
 
 static int __init boot_mode_boot(char *onoff)
@@ -1919,26 +1789,6 @@ static int __init boot_mode_boot(char *onoff)
 	return 1;
 }
 __setup("androidboot.boot_pause=", boot_mode_boot);
-
-
-static int __init board_serialno_setup(char *serialno)
-{
-	int i;
-	char *src = serialno;
-
-	/* create a fake MAC address from our serial number.
-	 * first byte is 0x02 to signify locally administered.
-	 */
-	rndis_pdata.ethaddr[0] = 0x02;
-	for (i = 0; *src; i++) {
-		/* XOR the USB serial across the remaining bytes */
-		rndis_pdata.ethaddr[i % (ETH_ALEN - 1) + 1] ^= *src++;
-	}
-
-	android_usb_pdata.serial_number = serialno;
-	return 1;
-}
-__setup("androidboot.serialno=", board_serialno_setup);
 
 #ifdef CONFIG_USB_EHCI_MSM_72K
 static void msm_hsusb_vbus_power(unsigned phy_info, int on)
@@ -4009,10 +3859,6 @@ static struct platform_device *surf_ffa_devices[] __initdata = {
 	&android_usb_device,
 	&android_pmem_device,
 	&android_pmem_adsp_device,
-	&usb_mass_storage_device,
-	&rndis_device,
-	&usb_diag_device,
-	&usb_gadget_fserial_device,
 	&android_pmem_audio_device,
 	&msm_device_snd,
 	&msm_device_adspdec,
